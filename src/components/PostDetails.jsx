@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState, useCallback } from 'react';
 
 export default function PostDetails({ post, onBack }) {
 const [comments, setComments] = useState([]);
@@ -6,19 +6,27 @@ const [newComment, setNewComment] = useState("");
 const [isSubmitting, setIsSubmitting] = useState(false);
 
 // fetch comments specific to this post whenever the view mounts
-useEffect(() => {
-    fetchComments();
-}, [post.id]);
 
-const fetchComments = async () => {
+// 1. Wrap the function in useCallback and use backticks for the URL string
+const fetchComments = useCallback(async () => {
     try {
-        const res = await fetch('http://localhost:3000/api/posts/${post.id}/comments');
+        // CHANGED: Uses backticks (`) so ${post.id} works dynamically
+        const res = await fetch(`http://localhost:3000/api/posts/${post.id}/comments`);
         const data = await res.json();
-        setComments(data)
+        setComments(data);
     } catch (error){
         console.error("error loading conversation threads:", error);
     }
- };
+}, [post.id]); // Re-runs function definition only if post.id changes
+
+useEffect(() => {
+    const timer = setTimeout(() => {
+        fetchComments();
+    }, 0);
+
+    return () => clearTimeout(timer);
+}, [fetchComments]); // Safe dependency array
+
  // submit viewer comment payload
  const handleCommentSubmit = async (e) => {
     e.preventDefault();
